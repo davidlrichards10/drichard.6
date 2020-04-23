@@ -7,8 +7,13 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+struct time{
+	int nanoseconds;
+	int seconds;
+};
 
-
-
+typedef struct shmStruct{
+	struct time time;
+} sm;
 
 #endif
