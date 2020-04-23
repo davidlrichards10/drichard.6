@@ -12,7 +12,12 @@ struct time{
 	int seconds;
 };
 
+typedef struct {
+        int termF;
+} resourceInfo;
+
 typedef struct shmStruct{
+	resourceInfo resourceStruct;
 	struct time time;
 } sm;
 
