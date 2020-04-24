@@ -31,6 +31,10 @@ void incClock(struct time* time, int sec, int ns);
 
 int main(int argc, char* argv[]) 
 {
+	time_t t;
+        time(&t);       
+        srand((int)time(&t) % getpid());
+
 	/* get shared memory */
      	if ((shmid = shmget(9784, sizeof(sm), 0600)) < 0) 
 	{
@@ -50,17 +54,83 @@ int main(int argc, char* argv[])
 	/* attach to shared memory */
 	ptr = shmat(shmid, NULL, 0);
 
-	time_t t;
-	time(&t);	
-	srand((int)time(&t) % getpid());
+	/* set time for when a process should either request or release */
+	int nextMove = (rand() % 1000000 + 1);
+	struct time moveTime;
+	sem_wait(sem);
+	moveTime.seconds = ptr->time.seconds;
+	moveTime.nanoseconds = ptr->time.nanoseconds;
+	sem_post(sem);
 
-	while(1) 
+	/* set time for a when a process should check if its time to terminate */
+	int termination = (rand() % (250 * 1000000) + 1);
+	struct time termCheck;
+	sem_wait(sem);
+	termCheck.seconds = ptr->time.seconds;
+	termCheck.nanoseconds = ptr->time.nanoseconds;
+	sem_post(sem);
+
+	int count = 0;
+
+	if(ptr->resourceStruct.memType == 0)
 	{
-			strcpy(msg.mtext,"TERMINATED");
-			msg.msgType = 99;
-			msgsnd(messageQ,&msg,sizeof(msg),0);
-			exit(0);	
-	}	
+		while(1) 
+		{
+
+		/* if its time for the next action, check whether to request or release */
+			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
+			{
+				/* set time for next acion check */
+                                sem_wait(sem);
+                                moveTime.seconds = ptr->time.seconds;
+                                moveTime.nanoseconds = ptr->time.nanoseconds;
+                                sem_post(sem);
+                                incClock(&moveTime, 0, nextMove);
+				
+				if(rand()%100 < 40)
+				{
+					count++;
+					strcpy(msg.mtext,"REQUEST");
+					msg.msgType = 99;
+					msgsnd(messageQ,&msg,sizeof(msg),0);
+				
+					int request = rand() % 32;
+					ptr->resourceStruct.request = request;
+				}
+				else
+				{
+					count++;
+					strcpy(msg.mtext,"WRITE");
+                                        msg.msgType = 99;
+                                        msgsnd(messageQ,&msg,sizeof(msg),0);
+					int write = rand() % 32;
+					ptr->resourceStruct.write = write;
+					
+				}
+			}
+
+
+			if((ptr->resourceStruct.count % 100) == 0 && count!=0)
+			{
+				if((rand()%100) <= 70)
+				{
+					strcpy(msg.mtext,"TERMINATED");
+					msg.msgType = 99;
+					msgsnd(messageQ,&msg,sizeof(msg),0);
+				}
+			}
+
+			exit(0);
+			
+		}	
+	}
+	else
+	{
+		while(1)
+		{
+			exit(0);
+		}
+	}
 	return 0;
 }
 

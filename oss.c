@@ -109,6 +109,17 @@ int main(int argc, char* argv[])
         }
 
 	setUp();
+	
+	if(memoryAccess == 0)
+	{
+		printf("Memory access method 0\n");
+		ptr->resourceStruct.memType = 0;
+	}
+	else
+	{
+		printf("Memory access method 1\n");
+		ptr->resourceStruct.memType = 1;
+	}
 	struct time randFork;
 
 	/* start alarm based on user specification */
@@ -199,9 +210,22 @@ int main(int argc, char* argv[])
 							exit(0);
 						}
 				
-						if (msgrcv(messageQ, &msg,sizeof(msg)+1,99,0) == -1) {
+						if (msgrcv(messageQ, &msg,sizeof(msg)+1,99,0) == -1) 
+						{
 								perror("msgrcv");
 
+						}
+
+						if(strcmp(msg.mtext, "WRITE") == 0)
+                                                {
+							ptr->resourceStruct.count+=1;
+                                                        fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,ptr->resourceStruct.request, ptr->time.seconds,ptr->time.nanoseconds);
+                                                }
+
+						if(strcmp(msg.mtext, "REQUEST") == 0)
+                                                {
+							ptr->resourceStruct.count+=1;
+                                                        fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,ptr->resourceStruct.request, ptr->time.seconds,ptr->time.nanoseconds);
 						}
 
 						/* if a process decides to terminate update stillActive array and release allocated resources */

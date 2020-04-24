@@ -13,7 +13,10 @@ struct time{
 };
 
 typedef struct {
-        int termF;
+	int memType;
+	int request;
+	int write;
+	int count;
 } resourceInfo;
 
 typedef struct shmStruct{
