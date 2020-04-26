@@ -18,6 +18,7 @@
 
 /* for shared memory setup/semaphore */
 int shmid; 
+int shmid_mem;
 sm* ptr;
 sem_t *sem;
 
@@ -26,30 +27,22 @@ struct message {
     char mtext[512];
 };
 
-struct Page{
-	int frame;
-	int swap;
+struct memory {
+    int refbit[256]; 
+    int dirtystatus[256]; 
+    int bitvector[256]; 
+    int frame[256]; 
+    int refptr; 
+    int pagetable[18][32]; 
+    int pagelocation[576]; 
 };
 
-struct PageTable{
-	struct Page frames[32];
-};
-
-struct Frame{
-	int pid;
-	unsigned dirtyBit : 1;
-	unsigned ref : 8;
-};
-
-struct Memory{
-	struct Frame frameTable[256];
-	struct PageTable pageTables[18];
-};
-
-struct Memory memory;
+struct memory *mem; 
+struct memory memstruct; 
 
 struct message msg;
 
+int pagenumber[18][32];
 int messageQ;
 int stillActive[20];
 int pidNum = 0;
@@ -59,8 +52,12 @@ void setUp();
 void detach();
 void sigErrors();
 void incClock(struct time* time, int sec, int ns);
-void checkPageTable(int procNum);
-void searchFrameTable(int procNum, int pageNumber);
+int findPage(int, int);
+void setPageNumbers();
+int frameToReplace();
+int nextOpenFrame();
+void pageToFrame(int, int, int);
+
 
 int timer = 5;
 int memoryAccess = 0;
@@ -73,6 +70,10 @@ int main(int argc, char* argv[])
 {
 	/* getopt to parse command line options */
 	int c;
+	int frameresult = 0;
+	int next_open_frame = 0;
+    	int frame_to_replace = -1;
+	 int page_to_send = -1;
 	int i = 0;
 	while((c=getopt(argc, argv, "m:i:t:h"))!= EOF)
 	{
@@ -106,7 +107,7 @@ int main(int argc, char* argv[])
 	int maxPro = 100;
 	srand(time(NULL));
 	int count = 0;	
-	int frameresult = 0;
+	//int frameresult = 0;
 
 	pid_t cpid;
 
@@ -135,19 +136,7 @@ int main(int argc, char* argv[])
 
 	setUp();
 
-	int k;
-	for(i = 0; i < 256; i++){
-		memory.frameTable[i].ref = 0x0;
-		memory.frameTable[i].dirtyBit = 0x0;
-		memory.frameTable[i].pid = -1;
-	}
-	
-	for(i = 0; i < 18; i++){
-		for(k = 0; k < 32; k++){
-			memory.pageTables[i].frames[k].frame = -1;
-			memory.pageTables[i].frames[k].swap = -1;
-		}
-	}
+	setPageNumbers();
 
 	if(memoryAccess == 0)
 	{
@@ -260,18 +249,31 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
 							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
-                                                        
-							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);					
-							if(memory.pageTables[pid].frames[write].frame == -1)
+                                                        frameresult = findPage(pid, write);
+							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
+
+							if (frameresult != -1) 
 							{
-								fprintf(fp,"pagefault\n");
-								 memory.pageTables[pid].frames[write].frame = write;
-							}				
+								mem->refbit[frameresult] = 1;
+								mem->dirtystatus[frameresult] = 1;
+								fprintf(fp,"granted\n");
+							}
 							else
 							{
-								fprintf(fp,"Master: Address %d is in page %d\n", write, memory.pageTables[pid].frames[write].frame);
-								memory.pageTables[pid].frames[write].frame = write;
-							}			
+								next_open_frame = nextOpenFrame();
+								fprintf(fp,"pagefault\n");
+								if (next_open_frame == -1) {
+                    						frame_to_replace = frameToReplace();
+                    						pageToFrame(pagenumber[pid][write],frame_to_replace, 0);
+                    						mem->pagetable[pid][write] = frame_to_replace;
+                						}
+                						else {
+                    							page_to_send = pagenumber[pid][write];
+                    							pageToFrame(page_to_send, next_open_frame, 0);
+                    						mem->pagetable[pid][write] = next_open_frame;
+                						}
+								
+							}
 						}
 						if(strcmp(msg.mtext, "REQUEST") == 0)
                                                 {
@@ -287,7 +289,35 @@ int main(int argc, char* argv[])
 							fprintf(fp,"Master: Terminating P%d at %d:%d\n",pid, ptr->time.seconds,ptr->time.nanoseconds);
 							stillActive[pid] = -1;
 						}
+						/*else
+						{
+							frameresult = findPage(pid, write);
+            						if (frameresult != -1) 
+							{
+                						mem->refbit[frameresult] = 1;
+								if(strcmp(msg.mtext, "REQUEST") == 0)
+                                                		{
+                                                        		msgrcv(messageQ,&msg,sizeof(msg),99,0);
+                                                        		int request = atoi(msg.mtext);
+                                                        		ptr->resourceStruct.count+=1;
+                                                        		fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
+                                                		}
+								else if(strcmp(msg.mtext, "WRITE") == 0)
+                                                		{       
+                                                        		msgrcv(messageQ,&msg,sizeof(msg),99,0);
+                                                        		int write = atoi(msg.mtext); 
+                                                        		ptr->resourceStruct.count+=1; 
+                                                        		fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);                                                    
+                                                		}
 
+	
+							}
+							else
+							{
+								fprintf(fp,"pagefault\n");	
+							}
+						}*/
+						
 											
 
 						if(pidNum < 17)
@@ -302,6 +332,86 @@ int main(int argc, char* argv[])
 		}
 	detach();
 	return 0;
+}
+
+int nextOpenFrame() {
+    int i;
+    for (i=0; i<256; i++) {
+        if (mem->bitvector[i] == 0) {
+            return i;
+        }
+    }
+        return -1;
+}
+
+void pageToFrame(int pagenum, int framenum, int dirtybit) {
+    mem->refbit[framenum] = 1;
+    mem->dirtystatus[framenum] = dirtybit;
+    mem->bitvector[framenum] = 1;
+    mem->frame[framenum] = pagenum;
+    mem->pagelocation[pagenum] = framenum;
+}
+
+int frameToReplace() {
+    int framenum;
+    while(1) {
+
+        if (mem->refbit[mem->refptr] == 1) {
+            mem->refbit[mem->refptr] = 0;
+            if (mem->refptr == 255) {mem->refptr = 0;}
+            else {mem->refptr++;}
+        }
+
+        else {
+            framenum = mem->refptr;
+            if(mem->refptr == 255) {mem->refptr = 0;}
+            else {mem->refptr++;}
+            return framenum;
+        }
+    }
+}
+
+int findPage(int userpid, int userpagenum)
+{
+    int i, actualpagenumber, framenumber;
+
+    actualpagenumber = pagenumber[userpid][userpagenum];
+
+    framenumber = mem->pagelocation[actualpagenumber];
+
+    if (framenumber == -1) {
+        return -1;
+    }
+
+    if (mem->frame[framenumber] == actualpagenumber) {
+        return framenumber;
+    }
+    for(i=0; i<256; i++) {
+        if (mem->frame[i] == actualpagenumber) {
+            printf("FAILED TO FIND PAGE %i THOUGH IT'S AT FRAME %i\n", actualpagenumber, i);
+            detach();
+            exit(1);
+        }
+        
+    }
+    return -1;
+}
+
+void setPageNumbers()
+{
+    int proc, pagenum, i;
+    for (proc=0; proc<18; proc++) {
+        for (pagenum=0; pagenum<32; pagenum++) {
+            mem->pagetable[proc][pagenum] = -1;
+            pagenumber[proc][pagenum] = proc*32 + pagenum;
+        }
+    }
+    for (pagenum = 0; pagenum < 576; pagenum++) {
+        mem->pagelocation[pagenum] = -1;
+    }
+    for (i=0; i<256; i++) {
+        mem->frame[i] = -1;
+    }
 }
 
 /* function to increment the clock and protect via semaphore */
@@ -321,6 +431,17 @@ void incClock(struct time* time, int sec, int ns)
 
 void setUp()
 {
+	shmid_mem = shmget(4020014, sizeof(memstruct), 0777 | IPC_CREAT);
+    	if (shmid_mem == -1) { //terminate if shmget failed
+            perror("OSS: error in shmget for memory struct");
+            exit(1);
+        }
+    	mem = (struct memory *) shmat(shmid_mem, NULL, 0);
+    	if (mem == (struct memory *)(-1) ) {
+        	perror("OSS: error in shmat liveState");
+        	exit(1);
+    	}
+
 	 /* setup shared memory segment */
         if ((shmid = shmget(9784, sizeof(sm), IPC_CREAT | 0600)) < 0)
         {
@@ -345,6 +466,7 @@ void setUp()
 /* detach shared memory and semaphore */
 void detach()
 {
+	shmctl(shmid_mem, IPC_RMID, NULL);
 	shmctl(shmid, IPC_RMID, NULL);	
 	msgctl(messageQ, IPC_RMID, NULL); 
 	sem_unlink("p5sem");
