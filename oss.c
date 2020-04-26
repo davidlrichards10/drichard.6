@@ -256,22 +256,26 @@ int main(int argc, char* argv[])
 							{
 								mem->refbit[frameresult] = 1;
 								mem->dirtystatus[frameresult] = 1;
-								fprintf(fp,"granted\n");
+								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameresult,ptr->time.seconds,ptr->time.nanoseconds);
 							}
 							else
 							{
 								next_open_frame = nextOpenFrame();
-								fprintf(fp,"pagefault\n");
-								if (next_open_frame == -1) {
-                    						frame_to_replace = frameToReplace();
-                    						pageToFrame(pagenumber[pid][write],frame_to_replace, 0);
-                    						mem->pagetable[pid][write] = frame_to_replace;
-                						}
-                						else {
+								fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
+								if (next_open_frame == -1) 
+								{
+                    							frame_to_replace = frameToReplace();
+                    							pageToFrame(pagenumber[pid][write],frame_to_replace, 0);
+                    							mem->pagetable[pid][write] = frame_to_replace;
+                							fprintf(fp,"Clearing frame %d and swapping in %d\n",frame_to_replace,pid);
+								}
+                						else 
+								{
                     							page_to_send = pagenumber[pid][write];
                     							pageToFrame(page_to_send, next_open_frame, 0);
-                    						mem->pagetable[pid][write] = next_open_frame;
-                						}
+                    							mem->pagetable[pid][write] = next_open_frame;
+                							fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
+								}
 								
 							}
 						}
