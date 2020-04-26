@@ -26,6 +26,28 @@ struct message {
     char mtext[512];
 };
 
+struct Page{
+	int frame;
+	int swap;
+};
+
+struct PageTable{
+	struct Page frames[32];
+};
+
+struct Frame{
+	int pid;
+	unsigned dirtyBit : 1;
+	unsigned ref : 8;
+};
+
+struct Memory{
+	struct Frame frameTable[256];
+	struct PageTable pageTables[18];
+};
+
+struct Memory memory;
+
 struct message msg;
 
 int messageQ;
@@ -37,8 +59,10 @@ void setUp();
 void detach();
 void sigErrors();
 void incClock(struct time* time, int sec, int ns);
+void checkPageTable(int procNum);
+void searchFrameTable(int procNum, int pageNumber);
 
-int timer = 2;
+int timer = 5;
 int memoryAccess = 0;
 
 /* default output file */
@@ -82,6 +106,7 @@ int main(int argc, char* argv[])
 	int maxPro = 100;
 	srand(time(NULL));
 	int count = 0;	
+	int frameresult = 0;
 
 	pid_t cpid;
 
@@ -109,7 +134,21 @@ int main(int argc, char* argv[])
         }
 
 	setUp();
+
+	int k;
+	for(i = 0; i < 256; i++){
+		memory.frameTable[i].ref = 0x0;
+		memory.frameTable[i].dirtyBit = 0x0;
+		memory.frameTable[i].pid = -1;
+	}
 	
+	for(i = 0; i < 18; i++){
+		for(k = 0; k < 32; k++){
+			memory.pageTables[i].frames[k].frame = -1;
+			memory.pageTables[i].frames[k].swap = -1;
+		}
+	}
+
 	if(memoryAccess == 0)
 	{
 		printf("Memory access method 0\n");
@@ -218,14 +257,28 @@ int main(int argc, char* argv[])
 
 						if(strcmp(msg.mtext, "WRITE") == 0)
                                                 {
+							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
+							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
-                                                        fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,ptr->resourceStruct.request, ptr->time.seconds,ptr->time.nanoseconds);
-                                                }
-
+                                                        
+							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);					
+							if(memory.pageTables[pid].frames[write].frame == -1)
+							{
+								fprintf(fp,"pagefault\n");
+								 memory.pageTables[pid].frames[write].frame = write;
+							}				
+							else
+							{
+								fprintf(fp,"Master: Address %d is in page %d\n", write, memory.pageTables[pid].frames[write].frame);
+								memory.pageTables[pid].frames[write].frame = write;
+							}			
+						}
 						if(strcmp(msg.mtext, "REQUEST") == 0)
                                                 {
+							msgrcv(messageQ,&msg,sizeof(msg),99,0);
+                                                        int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
-                                                        fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,ptr->resourceStruct.request, ptr->time.seconds,ptr->time.nanoseconds);
+                                                        fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
 						}
 
 						/* if a process decides to terminate update stillActive array and release allocated resources */
@@ -234,11 +287,23 @@ int main(int argc, char* argv[])
 							fprintf(fp,"Master: Terminating P%d at %d:%d\n",pid, ptr->time.seconds,ptr->time.nanoseconds);
 							stillActive[pid] = -1;
 						}
+
+											
+
+						if(pidNum < 17)
+						{			
+							pidNum++;	
+						} 
+						else
+						{
+							pidNum = 0;
+						}
 			}
 		}
 	detach();
 	return 0;
 }
+
 /* function to increment the clock and protect via semaphore */
 void incClock(struct time* time, int sec, int ns)
 {
@@ -292,12 +357,14 @@ void sigErrors(int signum)
         if (signum == SIGINT)
         {
 		printf("\nInterupted by ctrl-c\n");
+		detach();
 	}
         else
         {
                 printf("\nInterupted by %d second alarm\n", timer);
+		detach();
 	}
 	
-	detach();
+	//detach();
         exit(0);
 }

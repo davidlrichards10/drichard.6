@@ -31,10 +31,11 @@ void incClock(struct time* time, int sec, int ns);
 
 int main(int argc, char* argv[]) 
 {
+	
 	time_t t;
         time(&t);       
         srand((int)time(&t) % getpid());
-
+	
 	/* get shared memory */
      	if ((shmid = shmget(9784, sizeof(sm), 0600)) < 0) 
 	{
@@ -70,8 +71,6 @@ int main(int argc, char* argv[])
 	termCheck.nanoseconds = ptr->time.nanoseconds;
 	sem_post(sem);
 
-	int count = 0;
-
 	if(ptr->resourceStruct.memType == 0)
 	{
 		while(1) 
@@ -89,28 +88,29 @@ int main(int argc, char* argv[])
 				
 				if(rand()%100 < 40)
 				{
-					count++;
 					strcpy(msg.mtext,"REQUEST");
 					msg.msgType = 99;
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				
-					int request = rand() % 32;
-					ptr->resourceStruct.request = request;
+					int request = rand() % (30 + 1) + 1;
+					//ptr->resourceStruct.request = request;
+					sprintf(msg.mtext,"%d",request);
+                                        msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 				else
 				{
-					count++;
 					strcpy(msg.mtext,"WRITE");
                                         msg.msgType = 99;
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
-					int write = rand() % 32;
-					ptr->resourceStruct.write = write;
-					
+					int write = rand() % (30 + 1) +1;
+					//ptr->resourceStruct.write = write;		
+					sprintf(msg.mtext,"%d",write);
+					msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 			}
 
 
-			if((ptr->resourceStruct.count % 100) == 0 && count!=0)
+			if((ptr->resourceStruct.count % 100) == 0 && ptr->resourceStruct.count!=0)
 			{
 				if((rand()%100) <= 70)
 				{
