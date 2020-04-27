@@ -284,7 +284,35 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);
                                                         int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
+							frameresult = findPage(pid, request);
                                                         fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
+							
+							 if (frameresult != -1)
+                                                        {
+                                                                mem->refbit[frameresult] = 1;
+                                                                fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameresult,pid,ptr->time.seconds,ptr->time.nanoseconds);
+                                                        }
+                                                        else
+                                                        {
+                                                                next_open_frame = nextOpenFrame();
+                                                                fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
+                                                                if (next_open_frame == -1)
+                                                                {
+                                                                        frame_to_replace = frameToReplace();
+                                                                        pageToFrame(pagenumber[pid][request],frame_to_replace, 0);
+                                                                        mem->pagetable[pid][request] = frame_to_replace;
+                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",frame_to_replace,pid);
+                                                                }
+                                                                else
+                                                                {
+                                                                        page_to_send = pagenumber[pid][request];
+                                                                        pageToFrame(page_to_send, next_open_frame, 0);
+                                                                        mem->pagetable[pid][request] = next_open_frame;
+                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
+                                                                }
+
+                                                        }
+
 						}
 
 						/* if a process decides to terminate update stillActive array and release allocated resources */
@@ -293,37 +321,7 @@ int main(int argc, char* argv[])
 							fprintf(fp,"Master: Terminating P%d at %d:%d\n",pid, ptr->time.seconds,ptr->time.nanoseconds);
 							stillActive[pid] = -1;
 						}
-						/*else
-						{
-							frameresult = findPage(pid, write);
-            						if (frameresult != -1) 
-							{
-                						mem->refbit[frameresult] = 1;
-								if(strcmp(msg.mtext, "REQUEST") == 0)
-                                                		{
-                                                        		msgrcv(messageQ,&msg,sizeof(msg),99,0);
-                                                        		int request = atoi(msg.mtext);
-                                                        		ptr->resourceStruct.count+=1;
-                                                        		fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
-                                                		}
-								else if(strcmp(msg.mtext, "WRITE") == 0)
-                                                		{       
-                                                        		msgrcv(messageQ,&msg,sizeof(msg),99,0);
-                                                        		int write = atoi(msg.mtext); 
-                                                        		ptr->resourceStruct.count+=1; 
-                                                        		fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);                                                    
-                                                		}
-
-	
-							}
-							else
-							{
-								fprintf(fp,"pagefault\n");	
-							}
-						}*/
 						
-											
-
 						if(pidNum < 17)
 						{			
 							pidNum++;	
