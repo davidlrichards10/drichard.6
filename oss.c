@@ -16,6 +16,8 @@
 #include <time.h>
 #include "shared.h"
 
+#define MAXPRO 18
+
 /* for shared memory setup/semaphore */
 int shmid; 
 int shmid_mem;
@@ -33,7 +35,7 @@ struct memory {
     int bitvector[256]; 
     int frame[256]; 
     int refptr; 
-    int pagetable[18][32]; 
+    int pagetable[MAXPRO][32]; 
     int pagelocation[576]; 
 };
 
@@ -42,12 +44,14 @@ struct memory memstruct;
 
 struct message msg;
 
-int pagenumber[18][32];
+int pagenumber[MAXPRO][32];
 int messageQ;
 int stillActive[20];
 int pidNum = 0;
 int termed = 0;	
+int secondsCount = 1;
 
+void printMemLayout();
 void setUp();
 void detach();
 void sigErrors();
@@ -275,6 +279,7 @@ int main(int argc, char* argv[])
                     							pageToFrame(page_to_send, next_open_frame, 0);
                     							mem->pagetable[pid][write] = next_open_frame;
                 							fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
+									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",next_open_frame);
 								}
 								
 							}
@@ -295,7 +300,7 @@ int main(int argc, char* argv[])
                                                         else
                                                         {
                                                                 next_open_frame = nextOpenFrame();
-                                                                fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
+                                                                fprintf(fp,"Address %d is not in a frame, pagefault\n", request);
                                                                 if (next_open_frame == -1)
                                                                 {
                                                                         frame_to_replace = frameToReplace();
@@ -321,6 +326,12 @@ int main(int argc, char* argv[])
 							fprintf(fp,"Master: Terminating P%d at %d:%d\n",pid, ptr->time.seconds,ptr->time.nanoseconds);
 							stillActive[pid] = -1;
 						}
+		
+						if(ptr->time.seconds == secondsCount)
+						{
+							secondsCount+=1;
+							printMemLayout();
+						}
 						
 						if(pidNum < 17)
 						{			
@@ -336,7 +347,55 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-int nextOpenFrame() {
+void printMemLayout()
+{
+	fprintf(fp,"\nCurrent Memory layout at time %d:%d\n",ptr->time.seconds,ptr->time.nanoseconds);
+	fprintf(fp,"\t     Occupied\tRef\t   DirtyBit\n");
+
+	int i;
+	for(i = 0; i < 256; i++)
+	{
+		fprintf(fp,"Frame %d:\t",i + 1);
+		
+		if (mem->bitvector[i] == 0)
+		{
+			fprintf(fp,"No\t");
+		}
+		else
+		{
+			fprintf(fp,"Yes\t");		
+		}
+		
+		if (mem->bitvector[i] == 1)
+		{
+			if (mem->refbit[i] == 0)
+			{
+				fprintf(fp,"0\t");
+			}
+			else
+			{
+				fprintf(fp,"1\t");
+			}
+		}
+		else
+		{
+			fprintf(fp,".\t");
+		}
+		if (mem->dirtystatus[i] == 0)
+		{
+			fprintf(fp,"0\t");
+		}
+		else
+		{
+			fprintf(fp,"1\t");
+		}
+		fprintf(fp,"\n");
+	}
+
+}
+
+int nextOpenFrame() 
+{
     int i;
     for (i=0; i<256; i++) {
         if (mem->bitvector[i] == 0) {

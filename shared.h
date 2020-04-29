@@ -18,17 +18,9 @@ typedef struct {
 	int write;
 } resourceInfo;
 
-struct processInfo{
-	int pid;
-	struct time unblockTime;
-	int unblock;
-	int frame;
-};
-
 typedef struct shmStruct{
 	resourceInfo resourceStruct;
 	struct time time;
-	struct processInfo processes[18];
 } sm;
 
 #endif
