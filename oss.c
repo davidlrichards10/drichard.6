@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include "shared.h"
+#include "queue.h"
 
 #define MAXPRO 18
 
@@ -29,7 +30,7 @@ struct message {
     char mtext[512];
 };
 
-struct memory {
+/*struct memory {
     int refbit[256]; 
     int dirtystatus[256]; 
     int bitvector[256]; 
@@ -38,7 +39,7 @@ struct memory {
     int pagetable[MAXPRO][32]; 
     int pagelocation[576]; 
 };
-
+*/
 struct memory *mem; 
 struct memory memstruct; 
 
