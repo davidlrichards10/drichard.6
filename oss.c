@@ -30,16 +30,6 @@ struct message {
     char mtext[512];
 };
 
-/*struct memory {
-    int refbit[256]; 
-    int dirtystatus[256]; 
-    int bitvector[256]; 
-    int frame[256]; 
-    int refptr; 
-    int pagetable[MAXPRO][32]; 
-    int pagelocation[576]; 
-};
-*/
 struct memory *mem; 
 struct memory memstruct; 
 
@@ -51,6 +41,7 @@ int stillActive[20];
 int pidNum = 0;
 int termed = 0;	
 int secondsCount = 1;
+int lines = 0;
 
 void printMemLayout();
 void setUp();
@@ -153,6 +144,7 @@ int main(int argc, char* argv[])
 		printf("Memory access method 1\n");
 		ptr->resourceStruct.memType = 1;
 	}
+	
 	struct time randFork;
 
 	/* start alarm based on user specification */
@@ -166,9 +158,7 @@ int main(int argc, char* argv[])
 			{
 				count--;
 			}
-
-			/* increment the clock by 70,000 per turn and by the initial fork */
-			incClock(&ptr->time,0,70000);
+			incClock(&ptr->time,0,10000);
 			int nextFork = (rand() % (500000000 - 1000000 + 1)) + 1000000;
 			incClock(&randFork,0,nextFork);
 			
@@ -255,10 +245,11 @@ int main(int argc, char* argv[])
 							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
                                                         frameresult = findPage(pid, write);
+							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
-
 							if (frameresult != -1) 
 							{
+								incClock(&ptr->time,0,10);
 								mem->refbit[frameresult] = 1;
 								mem->dirtystatus[frameresult] = 1;
 								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameresult,ptr->time.seconds,ptr->time.nanoseconds);
@@ -291,10 +282,12 @@ int main(int argc, char* argv[])
                                                         int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
 							frameresult = findPage(pid, request);
-                                                        fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
+                                                        incClock(&ptr->time,0,14000000);
+							fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
 							
-							 if (frameresult != -1)
+							if (frameresult != -1)
                                                         {
+								incClock(&ptr->time,0,10);
                                                                 mem->refbit[frameresult] = 1;
                                                                 fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameresult,pid,ptr->time.seconds,ptr->time.nanoseconds);
                                                         }
