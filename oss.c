@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 	int frameresult = 0;
 	int next_open_frame = 0;
     	int frame_to_replace = -1;
-	 int page_to_send = -1;
+	int page_to_send = -1;
 	int i = 0;
 	while((c=getopt(argc, argv, "m:i:t:h"))!= EOF)
 	{
@@ -103,8 +103,6 @@ int main(int argc, char* argv[])
 	int maxPro = 100;
 	srand(time(NULL));
 	int count = 0;	
-	//int frameresult = 0;
-
 	pid_t cpid;
 
 	int pid = 0;
@@ -132,6 +130,7 @@ int main(int argc, char* argv[])
 
 	setUp();
 
+	create();
 	setPageNumbers();
 
 	if(memoryAccess == 0)
@@ -274,7 +273,7 @@ int main(int argc, char* argv[])
                 							fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
 									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",next_open_frame);
 								}
-								
+								addProcess(pid);	
 							}
 						}
 						if(strcmp(msg.mtext, "REQUEST") == 0)
@@ -310,7 +309,7 @@ int main(int argc, char* argv[])
                                                                         mem->pagetable[pid][request] = next_open_frame;
                                                                         fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
                                                                 }
-
+								addProcess(pid);
                                                         }
 
 						}
