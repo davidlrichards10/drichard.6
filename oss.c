@@ -252,6 +252,7 @@ int main(int argc, char* argv[])
 								incClock(&ptr->time,0,10);
 								mem->refbit[frameresult] = 1;
 								mem->dirtystatus[frameresult] = 1;
+								incClock(&ptr->time,0,10000);
 								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameresult,ptr->time.seconds,ptr->time.nanoseconds);
 							}
 							else
