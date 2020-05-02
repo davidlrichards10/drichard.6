@@ -35,6 +35,8 @@ struct memory memstruct;
 
 struct message msg;
 
+int faults;
+int requests;
 int pagenumber[MAXPRO][32];
 int messageQ;
 int stillActive[20];
@@ -43,6 +45,7 @@ int termed = 0;
 int secondsCount = 1;
 int lines = 0;
 
+void printStats();
 void printMemLayout();
 void setUp();
 void detach();
@@ -185,6 +188,7 @@ int main(int argc, char* argv[])
 						/* exit and detach shared memory once all process terminate */
         					if(termed == 18)
 						{	
+							printStats();
 							detach();
 							return 0;
 
@@ -246,6 +250,8 @@ int main(int argc, char* argv[])
                                                         frameNumResult = pageLocation(pid, write);
 							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
+							requests++;
+
 							if (frameNumResult != -1) 
 							{
 								incClock(&ptr->time,0,10);
@@ -256,6 +262,7 @@ int main(int argc, char* argv[])
 							}
 							else
 							{
+								faults++;
 								findframe = findFrame();
 								fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
 								if (findframe == -1) 
@@ -284,7 +291,7 @@ int main(int argc, char* argv[])
 							frameNumResult = pageLocation(pid, request);
                                                         incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
-							
+							requests++;
 							if (frameNumResult != -1)
                                                         {
 								incClock(&ptr->time,0,10);
@@ -293,6 +300,7 @@ int main(int argc, char* argv[])
                                                         }
                                                         else
                                                         {
+								faults++;
                                                                 findframe = findFrame();
                                                                 fprintf(fp,"Address %d is not in a frame, pagefault\n", request);
                                                                 if (findframe == -1)
@@ -338,6 +346,7 @@ int main(int argc, char* argv[])
 						}
 			}
 		}
+	printStats();
 	detach();
 	return 0;
 }
@@ -387,6 +396,13 @@ void printMemLayout()
 		fprintf(fp,"\n");
 	}
 
+}
+
+void printStats()
+{
+	printf("\nMemory access  per second: %f\n",((float)(requests)/((float)(ptr->time.seconds))));	
+	printf("Page faults per access: %f\n",((float)(faults)/(float)requests));
+	printf("Average access time: %f\n\n", (((float)(ptr->time.seconds)+((float)ptr->time.nanoseconds/(float)(1000000000)))/((float)requests)));
 }
 
 void resetMemory(int id) 
@@ -578,13 +594,13 @@ void sigErrors(int signum)
         {
 		printf("\nInterupted by ctrl-c\n");
 		detach();
+		printStats();
 	}
         else
         {
                 printf("\nInterupted by %d second alarm\n", timer);
 		detach();
+		printStats();
 	}
-	
-	//detach();
         exit(0);
 }
