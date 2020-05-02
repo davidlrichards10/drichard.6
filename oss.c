@@ -399,7 +399,8 @@ int nextOpenFrame()
         return -1;
 }
 
-void pageToFrame(int pagenum, int framenum, int dirtybit) {
+void pageToFrame(int pagenum, int framenum, int dirtybit) 
+{
     mem->refbit[framenum] = 1;
     mem->dirtystatus[framenum] = dirtybit;
     mem->bitvector[framenum] = 1;
@@ -407,7 +408,8 @@ void pageToFrame(int pagenum, int framenum, int dirtybit) {
     mem->pagelocation[pagenum] = framenum;
 }
 
-int frameToReplace() {
+int frameToReplace() 
+{
     int framenum;
     while(1) {
 
@@ -461,12 +463,14 @@ void setPageNumbers()
             pagenumber[proc][pagenum] = proc*32 + pagenum;
         }
     }
-    for (pagenum = 0; pagenum < 576; pagenum++) {
-        mem->pagelocation[pagenum] = -1;
-    }
-    for (i=0; i<256; i++) {
-        mem->frame[i] = -1;
-    }
+    	for (pagenum = 0; pagenum < 576; pagenum++) 
+	{
+        	mem->pagelocation[pagenum] = -1;
+    	}
+    	for (i=0; i<256; i++) 
+	{
+        	mem->frame[i] = -1;
+    	}
 }
 
 /* function to increment the clock and protect via semaphore */
