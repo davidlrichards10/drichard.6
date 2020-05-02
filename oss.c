@@ -48,12 +48,11 @@ void setUp();
 void detach();
 void sigErrors();
 void incClock(struct time* time, int sec, int ns);
-int findPage(int, int);
-void setPageNumbers();
-int frameToReplace();
-int nextOpenFrame();
-void pageToFrame(int, int, int);
-
+int pageLocation(int, int);
+void initPages();
+int swapFrame();
+int findFrame();
+void pageSend(int, int, int);
 
 int timer = 5;
 int memoryAccess = 0;
@@ -66,10 +65,10 @@ int main(int argc, char* argv[])
 {
 	/* getopt to parse command line options */
 	int c;
-	int frameresult = 0;
-	int next_open_frame = 0;
-    	int frame_to_replace = -1;
-	int page_to_send = -1;
+	int frameNumResult = 0;
+	int findframe = 0;
+    	int swapframe = -1;
+	int sendNum = -1;
 	int i = 0;
 	while((c=getopt(argc, argv, "m:i:t:h"))!= EOF)
 	{
@@ -131,7 +130,7 @@ int main(int argc, char* argv[])
 	setUp();
 
 	create();
-	setPageNumbers();
+	initPages();
 
 	if(memoryAccess == 0)
 	{
@@ -243,35 +242,35 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
 							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
-                                                        frameresult = findPage(pid, write);
+                                                        frameNumResult = pageLocation(pid, write);
 							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
-							if (frameresult != -1) 
+							if (frameNumResult != -1) 
 							{
 								incClock(&ptr->time,0,10);
-								mem->refbit[frameresult] = 1;
-								mem->dirtystatus[frameresult] = 1;
+								mem->refbit[frameNumResult] = 1;
+								mem->dirtystatus[frameNumResult] = 1;
 								incClock(&ptr->time,0,10000);
-								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameresult,ptr->time.seconds,ptr->time.nanoseconds);
+								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameNumResult,ptr->time.seconds,ptr->time.nanoseconds);
 							}
 							else
 							{
-								next_open_frame = nextOpenFrame();
+								findframe = findFrame();
 								fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
-								if (next_open_frame == -1) 
+								if (findframe == -1) 
 								{
-                    							frame_to_replace = frameToReplace();
-                    							pageToFrame(pagenumber[pid][write],frame_to_replace, 0);
-                    							mem->pagetable[pid][write] = frame_to_replace;
-                							fprintf(fp,"Clearing frame %d and swapping in %d\n",frame_to_replace,pid);
+                    							swapframe = swapFrame();
+                    							pageSend(pagenumber[pid][write],swapframe, 0);
+                    							mem->pagetable[pid][write] = swapframe;
+                							fprintf(fp,"Clearing frame %d and swapping in %d\n",swapframe,pid);
 								}
                 						else 
 								{
-                    							page_to_send = pagenumber[pid][write];
-                    							pageToFrame(page_to_send, next_open_frame, 0);
-                    							mem->pagetable[pid][write] = next_open_frame;
-                							fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
-									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",next_open_frame);
+                    							sendNum = pagenumber[pid][write];
+                    							pageSend(sendNum, findframe, 0);
+                    							mem->pagetable[pid][write] = findframe;
+                							fprintf(fp,"Clearing frame %d and swapping in %d\n",findframe,pid);
+									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
 								}
 								addProcess(pid);	
 							}
@@ -281,33 +280,33 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);
                                                         int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
-							frameresult = findPage(pid, request);
+							frameNumResult = pageLocation(pid, request);
                                                         incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
 							
-							if (frameresult != -1)
+							if (frameNumResult != -1)
                                                         {
 								incClock(&ptr->time,0,10);
-                                                                mem->refbit[frameresult] = 1;
-                                                                fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameresult,pid,ptr->time.seconds,ptr->time.nanoseconds);
+                                                                mem->refbit[frameNumResult] = 1;
+                                                                fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameNumResult,pid,ptr->time.seconds,ptr->time.nanoseconds);
                                                         }
                                                         else
                                                         {
-                                                                next_open_frame = nextOpenFrame();
+                                                                findframe = findFrame();
                                                                 fprintf(fp,"Address %d is not in a frame, pagefault\n", request);
-                                                                if (next_open_frame == -1)
+                                                                if (findframe == -1)
                                                                 {
-                                                                        frame_to_replace = frameToReplace();
-                                                                        pageToFrame(pagenumber[pid][request],frame_to_replace, 0);
-                                                                        mem->pagetable[pid][request] = frame_to_replace;
-                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",frame_to_replace,pid);
+                                                                        swapframe = swapFrame();
+                                                                        pageSend(pagenumber[pid][request],swapframe, 0);
+                                                                        mem->pagetable[pid][request] = swapframe;
+                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",swapframe,pid);
                                                                 }
                                                                 else
                                                                 {
-                                                                        page_to_send = pagenumber[pid][request];
-                                                                        pageToFrame(page_to_send, next_open_frame, 0);
-                                                                        mem->pagetable[pid][request] = next_open_frame;
-                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",next_open_frame,pid);
+                                                                        sendNum = pagenumber[pid][request];
+                                                                        pageSend(sendNum, findframe, 0);
+                                                                        mem->pagetable[pid][request] = findframe;
+                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",findframe,pid);
                                                                 }
 								addProcess(pid);
                                                         }
@@ -388,84 +387,101 @@ void printMemLayout()
 
 }
 
-int nextOpenFrame() 
+int findFrame() 
 {
-    int i;
-    for (i=0; i<256; i++) {
-        if (mem->bitvector[i] == 0) {
-            return i;
-        }
-    }
-        return -1;
-}
-
-void pageToFrame(int pagenum, int framenum, int dirtybit) 
-{
-    mem->refbit[framenum] = 1;
-    mem->dirtystatus[framenum] = dirtybit;
-    mem->bitvector[framenum] = 1;
-    mem->frame[framenum] = pagenum;
-    mem->pagelocation[pagenum] = framenum;
-}
-
-int frameToReplace() 
-{
-    int framenum;
-    while(1) {
-
-        if (mem->refbit[mem->refptr] == 1) {
-            mem->refbit[mem->refptr] = 0;
-            if (mem->refptr == 255) {mem->refptr = 0;}
-            else {mem->refptr++;}
-        }
-
-        else {
-            framenum = mem->refptr;
-            if(mem->refptr == 255) {mem->refptr = 0;}
-            else {mem->refptr++;}
-            return framenum;
-        }
-    }
-}
-
-int findPage(int userpid, int userpagenum)
-{
-    int i, actualpagenumber, framenumber;
-
-    actualpagenumber = pagenumber[userpid][userpagenum];
-
-    framenumber = mem->pagelocation[actualpagenumber];
-
-    if (framenumber == -1) {
-        return -1;
-    }
-
-    if (mem->frame[framenumber] == actualpagenumber) {
-        return framenumber;
-    }
-    for(i=0; i<256; i++) {
-        if (mem->frame[i] == actualpagenumber) {
-            printf("FAILED TO FIND PAGE %i THOUGH IT'S AT FRAME %i\n", actualpagenumber, i);
-            detach();
-            exit(1);
-        }
-        
-    }
-    return -1;
-}
-
-void setPageNumbers()
-{
-    int proc, pagenum, i;
-    for (proc=0; proc<18; proc++) {
-        for (pagenum=0; pagenum<32; pagenum++) {
-            mem->pagetable[proc][pagenum] = -1;
-            pagenumber[proc][pagenum] = proc*32 + pagenum;
-        }
-    }
-    	for (pagenum = 0; pagenum < 576; pagenum++) 
+    	int i;
+    	for (i=0; i<256; i++) 
 	{
-        	mem->pagelocation[pagenum] = -1;
+        	if (mem->bitvector[i] == 0) 
+		{
+            		return i;
+        	}
+    	}
+        return -1;
+}
+
+void pageSend(int pageNum, int frameNum, int dirtybit) 
+{
+    	mem->refbit[frameNum] = 1;
+    	mem->dirtystatus[frameNum] = dirtybit;
+    	mem->bitvector[frameNum] = 1;
+    	mem->frame[frameNum] = pageNum;
+    	mem->pagelocation[pageNum] = frameNum;
+}
+
+int swapFrame() 
+{
+    	int frameNum;
+    	while(1) 
+	{
+
+        	if (mem->refbit[mem->refptr] == 1) 
+		{
+            		mem->refbit[mem->refptr] = 0;
+            		if (mem->refptr == 255) 
+			{
+				mem->refptr = 0;
+			}
+			else 
+			{
+				mem->refptr++;
+			}
+        	}
+        	else 
+		{
+           		frameNum = mem->refptr;
+            		if(mem->refptr == 255) 
+			{
+				mem->refptr = 0;
+			}
+            		else 
+			{
+				mem->refptr++;
+			}
+            		return frameNum;
+        	}
+    	}
+}
+
+int pageLocation(int u_pid, int u_num)
+{
+    	int i;
+	int pageNum; 
+	int frameNum;
+
+    	pageNum = pagenumber[u_pid][u_num];
+
+    	frameNum = mem->pagelocation[pageNum];
+
+    	if (frameNum == -1) 
+	{
+       		return -1;
+    	}
+
+    	if (mem->frame[frameNum] == pageNum) 
+	{
+        	return frameNum;
+    	}
+
+    	return -1;
+}
+
+void initPages()
+{
+    	int process;
+	int num;
+	int i;
+    	for (process=0; process<18; process++) 
+	{
+        	for (num=0; num<32; num++) 
+		{
+            		mem->pagetable[process][num] = -1;
+            		pagenumber[process][num] = process*32 + num;
+        	}
+    	}
+    	for (num = 0; num < 576; num++) 
+	{
+        	mem->pagelocation[num] = -1;
     	}
     	for (i=0; i<256; i++) 
 	{
