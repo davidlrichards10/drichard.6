@@ -53,6 +53,7 @@ void initPages();
 int swapFrame();
 int findFrame();
 void pageSend(int, int, int);
+void resetMemory(int);
 
 int timer = 5;
 int memoryAccess = 0;
@@ -318,6 +319,7 @@ int main(int argc, char* argv[])
 						{
 							fprintf(fp,"Master: Terminating P%d at %d:%d\n",pid, ptr->time.seconds,ptr->time.nanoseconds);
 							stillActive[pid] = -1;
+							resetMemory(pid);
 						}
 		
 						if(ptr->time.seconds == secondsCount)
@@ -385,6 +387,27 @@ void printMemLayout()
 		fprintf(fp,"\n");
 	}
 
+}
+
+void resetMemory(int id) 
+{
+    	int i; 
+    	int frame;
+    	int page;
+    	for (i=0; i<32; i++) 
+    	{
+        	if(mem->pagetable[id][i] != -1) 
+        	{
+            		frame = mem->pagetable[id][i];
+            		page = pagenumber[id][i];
+            		mem->refbit[frame] = 0;
+            		mem->dirtystatus[frame] = 0;
+            		mem->bitvector[frame] = 0;
+            		mem->frame[frame] = -1;
+            		mem->pagetable[id][i] = -1;
+            		mem->pagelocation[page] = -1;
+        	}
+	}
 }
 
 int findFrame() 
