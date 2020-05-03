@@ -254,7 +254,14 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
 							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
-                                                        frameNumResult = pageLocation(pid, write);
+							if(ptr->resourceStruct.memType == 0)
+							{
+								frameNumResult = pageLocation(pid, write/1024);
+							}
+							if(ptr->resourceStruct.memType == 1)
+                                                        {
+                                                                frameNumResult = pageLocation(pid, (write/1024)/2);
+                                                        }
 							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
 							requests++;
@@ -275,16 +282,34 @@ int main(int argc, char* argv[])
 								if (findframe == -1) 
 								{
                     							swapframe = swapFrame();
-                    							pageSend(pagenumber[pid][write],swapframe, 0);
-                    							mem->pagetable[pid][write] = swapframe;
-                							fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
+									if(ptr->resourceStruct.memType == 0)
+									{
+										pageSend(pagenumber[pid][write/1024],swapframe, 0);
+                    								mem->pagetable[pid][write/1024] = swapframe;
+									}
+									if(ptr->resourceStruct.memType == 1)
+                                                                        {
+                                                                                pageSend(pagenumber[pid][(write/1024)/2],swapframe, 0);
+                                                                                mem->pagetable[pid][(write/1024)/2] = swapframe;
+                                                                        }
+
+									fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
 								}
                 						else 
 								{
-                    							sendNum = pagenumber[pid][write];
-                    							pageSend(sendNum, findframe, 0);
-                    							mem->pagetable[pid][write] = findframe;
-                							fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
+									if(ptr->resourceStruct.memType == 0)
+									{
+                    								sendNum = pagenumber[pid][write/1024];
+                    								pageSend(sendNum, findframe, 0);
+                                                                        	mem->pagetable[pid][write/1024] = findframe;
+									}
+									if(ptr->resourceStruct.memType == 1)
+                                                                        {
+                                                                                sendNum = pagenumber[pid][(write/1024)/2];
+                                                                                pageSend(sendNum, findframe, 0);
+                                                                                mem->pagetable[pid][(write/1024)/2] = findframe;
+                                                                        }
+									fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
 									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
 								}
 								addProcess(pid);	
@@ -295,8 +320,15 @@ int main(int argc, char* argv[])
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);
                                                         int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
-							frameNumResult = pageLocation(pid, request);
-                                                        incClock(&ptr->time,0,14000000);
+                                                        if(ptr->resourceStruct.memType == 0)
+							{
+							        frameNumResult = pageLocation(pid, request/1024);
+							}
+							if(ptr->resourceStruct.memType == 1)
+                                                        {
+                                                                frameNumResult = pageLocation(pid, (request/1024)/2);
+                                                        }
+							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
 							requests++;
 							if (frameNumResult != -1)
@@ -313,15 +345,34 @@ int main(int argc, char* argv[])
                                                                 if (findframe == -1)
                                                                 {
                                                                         swapframe = swapFrame();
-                                                                        pageSend(pagenumber[pid][request],swapframe, 0);
-                                                                        mem->pagetable[pid][request] = swapframe;
+                                                                     	if(ptr->resourceStruct.memType == 0)
+									{
+								          	pageSend(pagenumber[pid][request/1024],swapframe, 0);
+                                                                                mem->pagetable[pid][request/1024] = swapframe;
+									}
+									if(ptr->resourceStruct.memType == 1)
+                                                                        {
+                                                                                pageSend(pagenumber[pid][(request/1024)/2],swapframe, 0);
+                                                                                mem->pagetable[pid][(request/1024)/2] = swapframe;
+                                                                        }
+
                                                                         fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
                                                                 }
                                                                 else
                                                                 {
-                                                                        sendNum = pagenumber[pid][request];
-                                                                        pageSend(sendNum, findframe, 0);
-                                                                        mem->pagetable[pid][request] = findframe;
+									if(ptr->resourceStruct.memType == 0)
+									{
+                                                                                sendNum = pagenumber[pid][request/1024];
+                                                                                pageSend(sendNum, findframe, 0);
+                                                                                mem->pagetable[pid][request/1024] = findframe;
+									}
+									if(ptr->resourceStruct.memType == 1)
+                                                                        {
+                                                                                sendNum = pagenumber[pid][(request/1024)/2];
+                                                                                pageSend(sendNum, findframe, 0);
+                                                                                mem->pagetable[pid][(request/1024)/2] = findframe;
+                                                                        }
+
                                                                         fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
                                                                 }
 								addProcess(pid);

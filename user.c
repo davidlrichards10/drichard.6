@@ -21,6 +21,10 @@ sm* ptr;
 sem_t *sem;
 
 int messageQ;
+float weightarr[32];
+float reqpage;
+float randbound;
+float memaddr;
 
 struct message {
     long msgType;
@@ -73,10 +77,10 @@ int main(int argc, char* argv[])
 
 	if(ptr->resourceStruct.memType == 0)
 	{
-		while(1) 
+		while(1)
 		{
 
-		/* if its time for the next action, check whether to request or release */
+			/* if its time for the next action, check whether to request or release */
 			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
 			{
 				/* set time for next acion check */
@@ -92,7 +96,7 @@ int main(int argc, char* argv[])
 					msg.msgType = 99;
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				
-					int request = rand() % (30 + 1) + 1;
+					int request = rand() % (31998 + 1) + 1;
 					//ptr->resourceStruct.request = request;
 					sprintf(msg.mtext,"%d",request);
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
@@ -102,7 +106,7 @@ int main(int argc, char* argv[])
 					strcpy(msg.mtext,"WRITE");
                                         msg.msgType = 99;
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
-					int write = rand() % (30 + 1) +1;
+					int write = rand() % (31998 + 1) +1;
 					//ptr->resourceStruct.write = write;		
 					sprintf(msg.mtext,"%d",write);
 					msgsnd(messageQ,&msg,sizeof(msg),0);
@@ -121,15 +125,88 @@ int main(int argc, char* argv[])
 			}
 
 			exit(0);
-			
-		}	
+		}		
 	}
-	else
+	if(ptr->resourceStruct.memType == 1)
 	{
 		while(1)
 		{
+
+			float weighted;
+			int i;
+			for(i = 1; i <= 32; i++)
+			{
+				weighted = 1 / (float)i;
+				weightarr[i - 1] = weighted;
+			}
+			
+			for(i = 0; i < 31; i++)
+			{
+				weightarr[0] = 1;
+				weightarr[i + 1] = 1 + weightarr[i + 1];
+			}
+			randbound = weightarr[i];
+			
+			int randnum = (rand() % (int)randbound + 1);
+			int k;
+
+			for(k = 0; k < 32; k++)
+			{
+				if(weightarr[k] > randnum)
+				{
+					reqpage = weightarr[k];
+					break;
+				}
+			}
+
+			float multiplied = reqpage * 1024;
+			float randoffset = rand() % 1023;
+			memaddr = multiplied + randoffset;  
+			
+			//printf("%d\n",memaddr);
+			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
+			{
+                                sem_wait(sem);
+                                moveTime.seconds = ptr->time.seconds;
+                                moveTime.nanoseconds = ptr->time.nanoseconds;
+                                sem_post(sem);
+                                incClock(&moveTime, 0, nextMove);
+				
+				if(rand()%100 < 40)
+				{
+					strcpy(msg.mtext,"REQUEST");
+					msg.msgType = 99;
+					msgsnd(messageQ,&msg,sizeof(msg),0);
+				
+					int request = rand() % (31998 + 1) + 1;
+					sprintf(msg.mtext,"%i",memaddr);
+                                        msgsnd(messageQ,&msg,sizeof(msg),0);
+				}
+				else
+				{
+					strcpy(msg.mtext,"WRITE");
+                                        msg.msgType = 99;
+                                        msgsnd(messageQ,&msg,sizeof(msg),0);
+					int write = rand() % (31998 + 1) +1;
+					sprintf(msg.mtext,"%i",memaddr);
+					msgsnd(messageQ,&msg,sizeof(msg),0);
+				}
+			}
+
+
+			if((ptr->resourceStruct.count % 100) == 0 && ptr->resourceStruct.count!=0)
+			{
+				if((rand()%100) <= 70)
+				{
+					strcpy(msg.mtext,"TERMINATED");
+					msg.msgType = 99;
+					msgsnd(messageQ,&msg,sizeof(msg),0);
+				}
+			}
+
 			exit(0);
-		}
+			
+		}	
 	}
 	return 0;
 }
