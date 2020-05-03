@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
 {
 	/* getopt to parse command line options */
 	int c;
+	int unblockNum = -1;
 	int frameNumResult = 0;
 	int findframe = 0;
     	int swapframe = -1;
@@ -235,6 +236,12 @@ int main(int argc, char* argv[])
 							execl("./user","user", NULL);
 							exit(0);
 						}
+
+						unblockNum = getProcess(); 
+       	 					if (unblockNum != -1) 
+        					{
+               	 					removeProcess(unblockNum);
+						}
 				
 						if (msgrcv(messageQ, &msg,sizeof(msg)+1,99,0) == -1) 
 						{
@@ -270,14 +277,14 @@ int main(int argc, char* argv[])
                     							swapframe = swapFrame();
                     							pageSend(pagenumber[pid][write],swapframe, 0);
                     							mem->pagetable[pid][write] = swapframe;
-                							fprintf(fp,"Clearing frame %d and swapping in %d\n",swapframe,pid);
+                							fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
 								}
                 						else 
 								{
                     							sendNum = pagenumber[pid][write];
                     							pageSend(sendNum, findframe, 0);
                     							mem->pagetable[pid][write] = findframe;
-                							fprintf(fp,"Clearing frame %d and swapping in %d\n",findframe,pid);
+                							fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
 									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
 								}
 								addProcess(pid);	
@@ -297,7 +304,7 @@ int main(int argc, char* argv[])
 								incClock(&ptr->time,0,10);
                                                                 mem->refbit[frameNumResult] = 1;
                                                                 fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameNumResult,pid,ptr->time.seconds,ptr->time.nanoseconds);
-                                                        }
+							}
                                                         else
                                                         {
 								faults++;
@@ -308,14 +315,14 @@ int main(int argc, char* argv[])
                                                                         swapframe = swapFrame();
                                                                         pageSend(pagenumber[pid][request],swapframe, 0);
                                                                         mem->pagetable[pid][request] = swapframe;
-                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",swapframe,pid);
+                                                                        fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
                                                                 }
                                                                 else
                                                                 {
                                                                         sendNum = pagenumber[pid][request];
                                                                         pageSend(sendNum, findframe, 0);
                                                                         mem->pagetable[pid][request] = findframe;
-                                                                        fprintf(fp,"Clearing frame %d and swapping in %d\n",findframe,pid);
+                                                                        fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
                                                                 }
 								addProcess(pid);
                                                         }

@@ -48,4 +48,23 @@ int addProcess (int waitPid)
     	return -1;
 }
 
+int removeProcess(int pNum) 
+{
+    	int i;
+    	for (i=0; i<18; i++) 
+	{
+        	if (wPtr.queue[i] == pNum) 
+		{ 
+            		while(i+1 < 18) 
+			{
+                		wPtr.queue[i] = wPtr.queue[i+1];
+                		i++;
+            		}
+            		wPtr.queue[17] = -1;
+            		return 1;
+        	}
+    	}
+    	return -1;
+}
+
 #endif
