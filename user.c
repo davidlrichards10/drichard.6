@@ -21,10 +21,10 @@ sm* ptr;
 sem_t *sem;
 
 int messageQ;
-float weightarr[32];
-float reqpage;
-float randbound;
-float memaddr;
+float weights[32];
+float pageWeight;
+float processWeightBound;
+float methodTwoRequest;
 
 struct message {
     long msgType;
@@ -132,38 +132,37 @@ int main(int argc, char* argv[])
 		while(1)
 		{
 
-			float weighted;
+			float processWeight;
 			int i;
 			for(i = 1; i <= 32; i++)
 			{
-				weighted = 1 / (float)i;
-				weightarr[i - 1] = weighted;
+				processWeight = 1 / (float)i;
+				weights[i - 1] = processWeight;
 			}
 			
 			for(i = 0; i < 31; i++)
 			{
-				weightarr[0] = 1;
-				weightarr[i + 1] = 1 + weightarr[i + 1];
+				weights[0] = 1;
+				weights[i + 1] = 1 + weights[i + 1];
 			}
-			randbound = weightarr[i];
+			processWeightBound = weights[i];
 			
-			int randnum = (rand() % (int)randbound + 1);
-			int k;
+			int num = (rand() % (int)processWeightBound + 1);
+			int j;
 
-			for(k = 0; k < 32; k++)
+			for(j = 0; j < 32; j++)
 			{
-				if(weightarr[k] > randnum)
+				if(weights[j] > num)
 				{
-					reqpage = weightarr[k];
+					pageWeight = weights[j];
 					break;
 				}
 			}
 
-			float multiplied = reqpage * 1024;
-			float randoffset = rand() % 1023;
-			memaddr = multiplied + randoffset;  
+			float pageNumber = pageWeight * 1024;
+			float randomOffset = rand() % 1023;
+			methodTwoRequest = pageNumber + randomOffset;  
 			
-			//printf("%d\n",memaddr);
 			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
 			{
                                 sem_wait(sem);
@@ -177,9 +176,7 @@ int main(int argc, char* argv[])
 					strcpy(msg.mtext,"REQUEST");
 					msg.msgType = 99;
 					msgsnd(messageQ,&msg,sizeof(msg),0);
-				
-					int request = rand() % (31998 + 1) + 1;
-					sprintf(msg.mtext,"%i",memaddr);
+					sprintf(msg.mtext,"%i",methodTwoRequest);
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 				else
@@ -187,8 +184,7 @@ int main(int argc, char* argv[])
 					strcpy(msg.mtext,"WRITE");
                                         msg.msgType = 99;
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
-					int write = rand() % (31998 + 1) +1;
-					sprintf(msg.mtext,"%i",memaddr);
+					sprintf(msg.mtext,"%i",methodTwoRequest);
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 			}

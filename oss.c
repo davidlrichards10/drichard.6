@@ -441,7 +441,7 @@ void printMemLayout()
 		}
 		else
 		{
-			fprintf(fp,".\t");
+			fprintf(fp,"0\t");
 		}
 		if (mem->dirtystatus[i] == 0)
 		{
@@ -461,6 +461,10 @@ void printStats()
 	printf("\nMemory access  per second: %f\n",((float)(requests)/((float)(ptr->time.seconds))));	
 	printf("Page faults per access: %f\n",((float)(faults)/(float)requests));
 	printf("Average access time: %f\n\n", (((float)(ptr->time.seconds)+((float)ptr->time.nanoseconds/(float)(1000000000)))/((float)requests)));
+
+	fprintf(fp,"\nMemory access  per second: %f\n",((float)(requests)/((float)(ptr->time.seconds))));
+        fprintf(fp,"Page faults per access: %f\n",((float)(faults)/(float)requests));
+        fprintf(fp,"Average access time: %f\n\n", (((float)(ptr->time.seconds)+((float)ptr->time.nanoseconds/(float)(1000000000)))/((float)requests)));
 }
 
 void resetMemory(int id) 
