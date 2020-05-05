@@ -21,13 +21,13 @@ typedef struct {
 } resourceInfo;
 
 struct memory {
-    int refbit[256]; 
-    int dirtystatus[256]; 
-    int bitvector[256]; 
-    int frame[256]; 
-    int refptr; 
-    int pagetable[MAXPRO][32]; 
-    int pagelocation[576]; 
+    	int referenceBit[256]; 
+    	int dirty[256]; 
+    	int bitvector[256]; 
+    	int frame[256]; 
+    	int referenceStat; 
+    	int pagetable[MAXPRO][32]; 
+    	int pagelocation[576]; 
 };
 
 typedef struct shmStruct{

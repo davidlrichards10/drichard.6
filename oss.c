@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 			{
 				count--;
 			}
-			incClock(&ptr->time,0,10000);
+			incClock(&ptr->time,0,100000);
 			int nextFork = (rand() % (500000000 - 1000000 + 1)) + 1000000;
 			incClock(&randFork,0,nextFork);
 			
@@ -279,8 +279,8 @@ int main(int argc, char* argv[])
 							if (frameNumResult != -1) 
 							{
 								incClock(&ptr->time,0,10);
-								mem->refbit[frameNumResult] = 1;
-								mem->dirtystatus[frameNumResult] = 1;
+								mem->referenceBit[frameNumResult] = 1;
+								mem->dirty[frameNumResult] = 1;
 								incClock(&ptr->time,0,10000);
 								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameNumResult,ptr->time.seconds,ptr->time.nanoseconds);
 							}
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
 							if (frameNumResult != -1)
                                                         {
 								incClock(&ptr->time,0,10);
-                                                                mem->refbit[frameNumResult] = 1;
+                                                                mem->referenceBit[frameNumResult] = 1;
                                                                 fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameNumResult,pid,ptr->time.seconds,ptr->time.nanoseconds);
 							}
 							/* else a page fault occurs and a empty frame is filled or frame to replace is found */
@@ -455,7 +455,7 @@ void printMemLayout()
 		
 		if (mem->bitvector[i] == 1)
 		{
-			if (mem->refbit[i] == 0)
+			if (mem->referenceBit[i] == 0)
 			{
 				fprintf(fp,"0\t");
 			}
@@ -468,7 +468,7 @@ void printMemLayout()
 		{
 			fprintf(fp,"0\t");
 		}
-		if (mem->dirtystatus[i] == 0)
+		if (mem->dirty[i] == 0)
 		{
 			fprintf(fp,"0\t");
 		}
@@ -505,8 +505,8 @@ void resetMemory(int id)
         	{
             		frame = mem->pagetable[id][i];
             		page = pagenumber[id][i];
-            		mem->refbit[frame] = 0;
-            		mem->dirtystatus[frame] = 0;
+            		mem->referenceBit[frame] = 0;
+            		mem->dirty[frame] = 0;
             		mem->bitvector[frame] = 0;
             		mem->frame[frame] = -1;
             		mem->pagetable[id][i] = -1;
@@ -532,8 +532,8 @@ int findFrame()
 /* set information about page */
 void pageSend(int pageNum, int frameNum, int dirtybit) 
 {
-    	mem->refbit[frameNum] = 1;
-    	mem->dirtystatus[frameNum] = dirtybit;
+    	mem->referenceBit[frameNum] = 1;
+    	mem->dirty[frameNum] = dirtybit;
     	mem->bitvector[frameNum] = 1;
     	mem->frame[frameNum] = pageNum;
     	mem->pagelocation[pageNum] = frameNum;
@@ -546,29 +546,29 @@ int swapFrame()
     	while(1) 
 	{
 		/* reset last chance bit */
-        	if (mem->refbit[mem->refptr] == 1) 
+        	if (mem->referenceBit[mem->referenceStat] == 1) 
 		{
-            		mem->refbit[mem->refptr] = 0;
-            		if (mem->refptr == 255) 
+            		mem->referenceBit[mem->referenceStat] = 0;
+            		if (mem->referenceStat == 255) 
 			{
-				mem->refptr = 0;
+				mem->referenceStat = 0;
 			}
 			else 
 			{
-				mem->refptr++;
+				mem->referenceStat++;
 			}
         	}
 		/* on last chance, so replace frame */
         	else 
 		{
-           		frameNum = mem->refptr;
-            		if(mem->refptr == 255) 
+           		frameNum = mem->referenceStat;
+            		if(mem->referenceStat == 255) 
 			{
-				mem->refptr = 0;
+				mem->referenceStat = 0;
 			}
             		else 
 			{
-				mem->refptr++;
+				mem->referenceStat++;
 			}
             		return frameNum;
         	}
