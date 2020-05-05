@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 			{
 				count--;
 			}
-			incClock(&ptr->time,0,100000);
+			incClock(&ptr->time,0,10000);
 			int nextFork = (rand() % (500000000 - 1000000 + 1)) + 1000000;
 			incClock(&randFork,0,nextFork);
 			

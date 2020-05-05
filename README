@@ -35,12 +35,7 @@ Version Control: (logging technique used)
                 1. My log files are included in /classes/OS/drichard/drichard.6/log.txt
 =======================================================================================================================
 Comments on submission: All project requirments met
-			1. The default of my timer is set to end program after 2 real life seconds
-			   Although depending on the status of how fast hoare is running this way want to be increased.
-			   Running this morning, there seemed to be a seperate issue on hoare so it was running very 
-			   slow. If this happens, I suggest using -t 20 on the command line for best results. This is 
-			   because if hoare is running slow, my program will never get to one second and memory access 
-			   per second will then be inf because dividing by 0 seconds will give you inf.
+			1. If hoare is running slow, I suggest using the option -t 20 for best results
 			2. The program output decription says You can display unallocated frames by a period and 
 			   allocated frame by a +. In the actual output it just shows yes/no for this so this is the
 			   way that I did it. Occupied frame will either be yes if occupied or no if not occupied
