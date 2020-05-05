@@ -90,14 +90,14 @@ int main(int argc, char* argv[])
                                 sem_post(sem);
                                 incClock(&moveTime, 0, nextMove);
 				
-				if(rand()%100 < 40)
+				/* see if a process needs to request read/write and generate random address */
+				if(rand()%100 < 60)
 				{
 					strcpy(msg.mtext,"REQUEST");
 					msg.msgType = 99;
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				
 					int request = rand() % (31998 + 1) + 1;
-					//ptr->resourceStruct.request = request;
 					sprintf(msg.mtext,"%d",request);
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
@@ -106,15 +106,14 @@ int main(int argc, char* argv[])
 					strcpy(msg.mtext,"WRITE");
                                         msg.msgType = 99;
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
-					int write = rand() % (31998 + 1) +1;
-					//ptr->resourceStruct.write = write;		
+					int write = rand() % (31998 + 1) +1;	
 					sprintf(msg.mtext,"%d",write);
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 			}
 
-
-			if((ptr->resourceStruct.count % 100) == 0 && ptr->resourceStruct.count!=0)
+			/* check for termination every 1000 memory references */
+			if((ptr->resourceStruct.count % 1000) == 0 && ptr->resourceStruct.count!=0)
 			{
 				if((rand()%100) <= 70)
 				{
@@ -127,11 +126,12 @@ int main(int argc, char* argv[])
 			exit(0);
 		}		
 	}
+	/* method 2 for memory access */
 	if(ptr->resourceStruct.memType == 1)
 	{
 		while(1)
 		{
-
+			/* initialize array where weight is 1/n */
 			float processWeight;
 			int i;
 			for(i = 1; i <= 32; i++)
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 				processWeight = 1 / (float)i;
 				weights[i - 1] = processWeight;
 			}
-			
+			/* add to each index of the array the value in the preceding index */
 			for(i = 0; i < 31; i++)
 			{
 				weights[0] = 1;
@@ -147,9 +147,11 @@ int main(int argc, char* argv[])
 			}
 			processWeightBound = weights[i];
 			
+			/* generate a random number from 0 to the last value in the array */
 			int num = (rand() % (int)processWeightBound + 1);
 			int j;
-
+	
+			/* travel down the array until you find a value greater than that num */ 
 			for(j = 0; j < 32; j++)
 			{
 				if(weights[j] > num)
@@ -159,10 +161,12 @@ int main(int argc, char* argv[])
 				}
 			}
 
+			/* multiply age number by 1024 and add random offset to get the actual memory address */
 			float pageNumber = pageWeight * 1024;
 			float randomOffset = rand() % 1023;
 			methodTwoRequest = pageNumber + randomOffset;  
 			
+			/* check if its time for next action and advance clock accordingly */
 			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
 			{
                                 sem_wait(sem);
@@ -171,7 +175,8 @@ int main(int argc, char* argv[])
                                 sem_post(sem);
                                 incClock(&moveTime, 0, nextMove);
 				
-				if(rand()%100 < 40)
+				/* see if it needs to be a read or write request */
+				if(rand()%100 < 60)
 				{
 					strcpy(msg.mtext,"REQUEST");
 					msg.msgType = 99;
@@ -190,6 +195,7 @@ int main(int argc, char* argv[])
 			}
 
 
+			/* check for termination every 1000 memory references */
 			if((ptr->resourceStruct.count % 100) == 0 && ptr->resourceStruct.count!=0)
 			{
 				if((rand()%100) <= 70)

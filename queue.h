@@ -7,12 +7,11 @@
 
 struct waitQueue {
     int queue[18]; 
-    unsigned int waitSec[18];
-    unsigned int waitNS[18];
 };
 
 struct waitQueue wPtr;
 
+/* initialize the queue */
 void create() 
 {
     	int i;
@@ -22,6 +21,7 @@ void create()
     	}
 }
 
+/* get next process from the queue */
 int getProcess() 
 {
     	if (wPtr.queue[0] == -1) 
@@ -34,6 +34,7 @@ int getProcess()
 	}
 }
 
+/* insert a process into the queue if blocked */
 int addProcess (int waitPid) 
 {
     	int i;
@@ -48,6 +49,7 @@ int addProcess (int waitPid)
     	return -1;
 }
 
+/* remove a process from the queue if request is granted */
 int removeProcess(int pNum) 
 {
     	int i;

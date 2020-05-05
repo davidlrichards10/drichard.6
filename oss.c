@@ -25,6 +25,7 @@ int shmid_mem;
 sm* ptr;
 sem_t *sem;
 
+/* struct for message queues*/
 struct message {
     long msgType;
     char mtext[512];
@@ -58,7 +59,7 @@ int findFrame();
 void pageSend(int, int, int);
 void resetMemory(int);
 
-int timer = 5;
+int timer = 2;
 int memoryAccess = 0;
 
 /* default output file */
@@ -67,7 +68,6 @@ FILE* fp;
 
 int main(int argc, char* argv[]) 
 {
-	/* getopt to parse command line options */
 	int c;
 	int unblockNum = -1;
 	int frameNumResult = 0;
@@ -75,6 +75,8 @@ int main(int argc, char* argv[])
     	int swapframe = -1;
 	int sendNum = -1;
 	int i = 0;
+	
+	/* getopt to parse command line options */
 	while((c=getopt(argc, argv, "m:i:t:h"))!= EOF)
 	{
 		switch(c)
@@ -121,7 +123,7 @@ int main(int argc, char* argv[])
 		stillActive[i] = i;
 	}
 
-	/* Catch ctrl-c and 3 second alarm interupts */
+	/* Catch ctrl-c and 2 second alarm interupts */
 	if (signal(SIGINT, sigErrors) == SIG_ERR) //sigerror on ctrl-c
         {
                 exit(0);
@@ -132,9 +134,12 @@ int main(int argc, char* argv[])
                 exit(0);
         }
 
+	/* set up shared memory */
 	setUp();
 
+	/* create queue for blcoked processes */
 	create();
+	/* set up page numbers */
 	initPages();
 
 	if(memoryAccess == 0)
@@ -238,7 +243,8 @@ int main(int argc, char* argv[])
 						}
 
 						unblockNum = getProcess(); 
-       	 					if (unblockNum != -1) 
+       	 					/* if the blocked queue is not empty grant request and remove from queue */
+						if (unblockNum != -1) 
         					{
                	 					removeProcess(unblockNum);
 						}
@@ -249,11 +255,14 @@ int main(int argc, char* argv[])
 
 						}
 
+						/* if user communicates a write action */
 						if(strcmp(msg.mtext, "WRITE") == 0)
                                                 {
+							/* get the address message */
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
 							int write = atoi(msg.mtext);	
 							ptr->resourceStruct.count+=1;
+							/* check if the address is available */
 							if(ptr->resourceStruct.memType == 0)
 							{
 								frameNumResult = pageLocation(pid, write/1024);
@@ -266,6 +275,7 @@ int main(int argc, char* argv[])
 							fprintf(fp,"Master: P%d Requesting write of address %d at %d:%d\n",pid,write, ptr->time.seconds,ptr->time.nanoseconds);
 							requests++;
 
+							/* grant request if available */
 							if (frameNumResult != -1) 
 							{
 								incClock(&ptr->time,0,10);
@@ -274,11 +284,13 @@ int main(int argc, char* argv[])
 								incClock(&ptr->time,0,10000);
 								fprintf(fp,"Address %d is in frame %d, writing data to frame at time %d:%d\n",write,frameNumResult,ptr->time.seconds,ptr->time.nanoseconds);
 							}
+							/* else a page fault occurs and a empty frame is filled or frame to replace is found */
 							else
 							{
 								faults++;
 								findframe = findFrame();
 								fprintf(fp,"Address %d is not in a frame, pagefault\n", write);
+								/* select a page to replace if memory is full */
 								if (findframe == -1) 
 								{
                     							swapframe = swapFrame();
@@ -294,7 +306,9 @@ int main(int argc, char* argv[])
                                                                         }
 
 									fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
+									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
 								}
+								/* place the page in the next open frame */
                 						else 
 								{
 									if(ptr->resourceStruct.memType == 0)
@@ -312,15 +326,19 @@ int main(int argc, char* argv[])
 									fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
 									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
 								}
+								/* add the process to the queue */
 								addProcess(pid);	
 							}
 						}
+						/* if user indicates a read request */
 						if(strcmp(msg.mtext, "REQUEST") == 0)
                                                 {
+							/* get the address from user.c */
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);
                                                         int request = atoi(msg.mtext); 
 							ptr->resourceStruct.count+=1;
-                                                        if(ptr->resourceStruct.memType == 0)
+                                                        /* check if the request can be granted */
+							if(ptr->resourceStruct.memType == 0)
 							{
 							        frameNumResult = pageLocation(pid, request/1024);
 							}
@@ -331,18 +349,21 @@ int main(int argc, char* argv[])
 							incClock(&ptr->time,0,14000000);
 							fprintf(fp,"Master: P%d Requesting read of address %d at %d:%d\n",pid,request, ptr->time.seconds,ptr->time.nanoseconds);
 							requests++;
+							/* the read request can be granted */
 							if (frameNumResult != -1)
                                                         {
 								incClock(&ptr->time,0,10);
                                                                 mem->refbit[frameNumResult] = 1;
                                                                 fprintf(fp,"Address %d is in frame %d, giving data to P%d at time %d:%d\n",request,frameNumResult,pid,ptr->time.seconds,ptr->time.nanoseconds);
 							}
+							/* else a page fault occurs and a empty frame is filled or frame to replace is found */
                                                         else
                                                         {
 								faults++;
                                                                 findframe = findFrame();
                                                                 fprintf(fp,"Address %d is not in a frame, pagefault\n", request);
-                                                                if (findframe == -1)
+                                                                /* if memory is full, select a page to replace */
+								if (findframe == -1)
                                                                 {
                                                                         swapframe = swapFrame();
                                                                      	if(ptr->resourceStruct.memType == 0)
@@ -358,6 +379,7 @@ int main(int argc, char* argv[])
 
                                                                         fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
                                                                 }
+								/* else put the page in the next empty frame */
                                                                 else
                                                                 {
 									if(ptr->resourceStruct.memType == 0)
@@ -375,6 +397,7 @@ int main(int argc, char* argv[])
 
                                                                         fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,sendNum);
                                                                 }
+								/* process is added to the queue */
 								addProcess(pid);
                                                         }
 
@@ -387,7 +410,7 @@ int main(int argc, char* argv[])
 							stillActive[pid] = -1;
 							resetMemory(pid);
 						}
-		
+						/* print the memory layout every second */
 						if(ptr->time.seconds == secondsCount)
 						{
 							secondsCount+=1;
@@ -404,11 +427,13 @@ int main(int argc, char* argv[])
 						}
 			}
 		}
+	/* print stats and detach shared memory */
 	printStats();
 	detach();
 	return 0;
 }
 
+/* function to print current memory layout */
 void printMemLayout()
 {
 	fprintf(fp,"\nCurrent Memory layout at time %d:%d\n",ptr->time.seconds,ptr->time.nanoseconds);
@@ -456,6 +481,7 @@ void printMemLayout()
 
 }
 
+/* function to print relevant statistics */
 void printStats()
 {
 	printf("\nMemory access  per second: %f\n",((float)(requests)/((float)(ptr->time.seconds))));	
@@ -467,6 +493,7 @@ void printStats()
         fprintf(fp,"Average access time: %f\n\n", (((float)(ptr->time.seconds)+((float)ptr->time.nanoseconds/(float)(1000000000)))/((float)requests)));
 }
 
+/* on termination, clear the frame and reset information */
 void resetMemory(int id) 
 {
     	int i; 
@@ -488,6 +515,7 @@ void resetMemory(int id)
 	}
 }
 
+/* return the next empty frame */
 int findFrame() 
 {
     	int i;
@@ -501,6 +529,7 @@ int findFrame()
         return -1;
 }
 
+/* set information about page */
 void pageSend(int pageNum, int frameNum, int dirtybit) 
 {
     	mem->refbit[frameNum] = 1;
@@ -510,12 +539,13 @@ void pageSend(int pageNum, int frameNum, int dirtybit)
     	mem->pagelocation[pageNum] = frameNum;
 }
 
+/* finds page to replace */
 int swapFrame() 
 {
     	int frameNum;
     	while(1) 
 	{
-
+		/* reset last chance bit */
         	if (mem->refbit[mem->refptr] == 1) 
 		{
             		mem->refbit[mem->refptr] = 0;
@@ -528,6 +558,7 @@ int swapFrame()
 				mem->refptr++;
 			}
         	}
+		/* on last chance, so replace frame */
         	else 
 		{
            		frameNum = mem->refptr;
@@ -544,6 +575,7 @@ int swapFrame()
     	}
 }
 
+/* function to return frame number if it is available otherwise return -1 */
 int pageLocation(int u_pid, int u_num)
 {
     	int i;
@@ -567,6 +599,7 @@ int pageLocation(int u_pid, int u_num)
     	return -1;
 }
 
+/* function that sets page numbers */
 void initPages()
 {
     	int process;
@@ -605,17 +638,21 @@ void incClock(struct time* time, int sec, int ns)
 	sem_post(sem);
 }
 
+/* set up shared memory */
 void setUp()
 {
+	/* set up shared memory segment */
 	shmid_mem = shmget(4020014, sizeof(memstruct), 0777 | IPC_CREAT);
-    	if (shmid_mem == -1) { //terminate if shmget failed
-            perror("OSS: error in shmget for memory struct");
-            exit(1);
+    	if (shmid_mem == -1) 
+	{
+            perror("Error: shmget");
+            exit(0);
         }
     	mem = (struct memory *) shmat(shmid_mem, NULL, 0);
-    	if (mem == (struct memory *)(-1) ) {
-        	perror("OSS: error in shmat liveState");
-        	exit(1);
+    	if (mem == (struct memory *)(-1) ) 
+	{
+        	perror("Error: shmat");
+        	exit(0);
     	}
 
 	 /* setup shared memory segment */
