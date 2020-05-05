@@ -1,0 +1,155 @@
+commit 2f5632604f9ec815904b3033526011cac4e4d247
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Mon May 4 20:41:45 2020 -0500
+
+    updated README
+
+commit 2b3034f69df5e544069e31d9c480a65317aad21c
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Mon May 4 20:13:22 2020 -0500
+
+    added comments
+
+commit ee04575b601c946a6b58b390ff3da3030c451830
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Mon May 4 17:08:37 2020 -0500
+
+    printed stats to end of log file as well
+
+commit b2d459001e7d49e69a73c7302c440393971f959f
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Sun May 3 16:40:42 2020 -0500
+
+    memory request method 2 done
+
+commit 668fbbc773654968995c56634bed49fbdf7c1df3
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Sat May 2 19:23:14 2020 -0500
+
+    finished wait queue
+
+commit 9ba69eefc74beca2f1035fc1ca376b346b33c069
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Fri May 1 20:45:15 2020 -0500
+
+    printing stats
+
+commit 93f758b609faea9bedfe911cc193d0f2f38d585b
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Fri May 1 20:34:49 2020 -0500
+
+    reset memory on termination
+
+commit bd348920993f685bd212580743ffa3c0b144be2c
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Fri May 1 20:24:32 2020 -0500
+
+    fixed seg fault
+
+commit ee4ef94e1d0f330e2d4919fb068db1fdb92ce920
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Fri May 1 19:54:13 2020 -0500
+
+    fixed sim clock
+
+commit ff653535cf354401dce899e83e6349dda05349ea
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 30 15:11:17 2020 -0500
+
+    implementing queue
+
+commit 998f754b3cc56195cbecc9549b07cdc3acb85b7c
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 30 15:02:12 2020 -0500
+
+    incremented time on dirty bit set
+
+commit 39dea3328e48692b4133aa97167c67e92efec51c
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 30 14:59:00 2020 -0500
+
+    incremented clock on request/grant
+
+commit 288dafac1ca0596fbf35365b8211fcbcea7ae348
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 30 14:36:39 2020 -0500
+
+    added wait queue (not used yet)
+
+commit 9a83228495a4346210ef37a20ec4320ca0d63ad0
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Wed Apr 29 15:00:32 2020 -0500
+
+    added maxPro macro and print memory layout function
+
+commit c1ec2652c4370250f9a83468750bffe1fda6f2c5
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Mon Apr 27 13:42:03 2020 -0500
+
+    granted read request, detected page faults
+
+commit 31b36fe53ea29990caa378b2d9c422f77121a184
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Sun Apr 26 14:09:35 2020 -0500
+
+    added more logging
+
+commit a8ec5910b1a05c09c4495a545323d15763a3e074
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Sun Apr 26 11:52:35 2020 -0500
+
+    granted write requets and detected pagefault
+
+commit 07ab3d762958671dde640315dbd712ab720dc4ec
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Sun Apr 26 10:56:27 2020 -0500
+
+    set up pcb and frame/page tables
+
+commit 405dc2a5ce230df762990ad13cc18f085d355177
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Fri Apr 24 14:40:45 2020 -0500
+
+    have child request read/write of a memory address
+
+commit 1140f123f8aa28743946bfa409a797d4d943bbb0
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 23 12:49:27 2020 -0500
+
+    message queues working
+
+commit ada8d92583d97d1c671904689a337fad86da639f
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Thu Apr 23 10:43:33 2020 -0500
+
+    set up shared memory/ getopt
+
+commit 80855a05dc59a77dea2f62e114693f5a45e683bd
+Author: davidlrichards10 <62032455+davidlrichards10@users.noreply.github.com>
+Date:   Thu Apr 23 10:13:16 2020 -0500
+
+    Create shared.h
+
+commit 1da6acfc93007667667fc5e01747b5a7566da25f
+Author: davidlrichards10 <62032455+davidlrichards10@users.noreply.github.com>
+Date:   Thu Apr 23 10:12:16 2020 -0500
+
+    Create user.c
+
+commit ac3cb3d84abd618f4615608cc91f54cebeefe884
+Author: davidlrichards10 <62032455+davidlrichards10@users.noreply.github.com>
+Date:   Thu Apr 23 10:10:48 2020 -0500
+
+    Create oss.c
+
+commit 7e4ce950ac6caafe7a2516c9172d9c280d683f30
+Author: davidlrichards10 <62032455+davidlrichards10@users.noreply.github.com>
+Date:   Thu Apr 23 10:08:30 2020 -0500
+
+    Create makefile
+
+commit 382b6889b6d5063bf5193cfc3d0548b135c09a5c
+Author: davidlrichards10 <62032455+davidlrichards10@users.noreply.github.com>
+Date:   Thu Apr 23 10:07:59 2020 -0500
+
+    Create README
