@@ -1,9 +1,13 @@
+/* Name: David Richards
+ * Date: Tue, May 5th
+ * Assignment: hw6
+ * file: user.c
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
-#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>

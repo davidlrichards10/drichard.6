@@ -1,3 +1,21 @@
+commit f4f4c761541a984b89d0446a22fcfeb06ae22046
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Tue May 5 16:09:55 2020 -0500
+
+    fixing clock increments
+
+commit 898d8b3bb881cea5fa2d06092b77704658b64e5a
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Tue May 5 08:35:39 2020 -0500
+
+    added performance to README
+
+commit d18912ef242bd83e084021ac5dca92ca50bc47f5
+Author: David Richards <drichard@hoare7.cs.umsl.edu>
+Date:   Mon May 4 20:44:34 2020 -0500
+
+    all logs included this commit
+
 commit 2f5632604f9ec815904b3033526011cac4e4d247
 Author: David Richards <drichard@hoare7.cs.umsl.edu>
 Date:   Mon May 4 20:41:45 2020 -0500

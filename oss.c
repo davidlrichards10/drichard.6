@@ -1,3 +1,8 @@
+/* Name: David Richards
+ * Date: Tue, May 5th
+ * Assignment: hw6
+ * file: oss.c
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
