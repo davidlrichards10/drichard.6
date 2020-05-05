@@ -43,13 +43,12 @@ int main(int argc, char* argv[])
 	/* get shared memory */
      	if ((shmid = shmget(9784, sizeof(sm), 0600)) < 0) 
 	{
-            perror("Error: shmget");
-            exit(errno);
+            exit(0);
      	}
 	
 	if ((messageQ = msgget(4020015, 0777 )) == -1 ) 
 	{
-        	perror("USER: Error generating message queue");
+        	perror("Error: message queue");
         	exit(0);
     	}
 	

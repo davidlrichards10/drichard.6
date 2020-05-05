@@ -1,1 +1,57 @@
-Os Project 6
+====================================================Homework 6 README==================================================
+        Date:   May 4th, 2020
+        Author: David Richards
+        Class:  CS4760
+=======================================================================================================================
+Invocation: ./oss [-h] [-i x -m x -t x]
+=======================================================================================================================
+How to Run:
+                1. Type make
+                2. Run the executable by typing ./oss [-h] [-i x -m x -t x]
+                3. ./oss alone will run with the following default ./oss -i log -t 2 -m 0
+                4. Default files names (File holding run logs ("log"))
+                5. -h   = describe how the project should be run and then terminate
+                   -i   = specify the output file that information will be written to (default is "log")
+		   -m   = indicate memory access type (type -m 1 for method 1 and nothing for method 2) 
+			  (Default method 1)
+			method 1 = generate random number 0-32,000
+		        method 2 = all pages have different weights of being selected
+                   -t   = specify the timer you want the program to run for(sigerror if runtime exceeds this)
+			  default of (2)
+		6. Type make clean to remove (oss.o and user.o) + executables (oss and user)
+=======================================================================================================================
+Files included:
+                1. oss.c = Main driver file used for most operations
+                   user.c = Child processes file that oss communicates with via shared memory/message queues
+			    and generates requests
+                   shared.h = Contains the structs and information for shared memory
+		   queue.h = contains all function required for the wait queue
+		   README = "this"
+		   makefile = following suffix rules
+		   log1 = I included my most recent log for memory access method 1 in the project submission
+		   log2 = I included my most recent log for memory access method 2 in the project submission
+=======================================================================================================================
+Version Control: (logging technique used)
+                1. My log files are included in /classes/OS/drichard/drichard.6/log.txt
+=======================================================================================================================
+Comments on submission: All project requirments met
+=======================================================================================================================
+Memory Access comments: You can view results in log1 (method 1) and log2 (method2)
+		        My memory access is dependent on my initial clock increment which I decided on 10,000 NS
+		
+		Method 1: Memory access  per second: 37.083332
+			  Page faults per access: 0.626966
+			  Average access time: 0.027787
+		
+		Method 2: Memory access  per second: 29.615385
+			  Page faults per access: 0.023377
+			  Average access time: 0.034298
+
+*Each run is slightly different but these are the results of one run each
+The performance across most runs is better for method 2 when it comes to page faults per access. We want this number
+as low as possible which is better for method 2. Memory access per seocnd and average access time may come into play
+when we talk about performance but these two stats are really dependent on the clock increments. We have lower memory
+access per second in method 2 and the average access time is lower in method 1. In my opinion, both methods seems to
+have their benifits when it comes to my program. When it comes to which method represents a more realistic way pages
+are requested I believe that method 2 is a more realistic way that pages are actually requested for optimum storage.
+=======================================================================================================================

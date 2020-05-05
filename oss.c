@@ -645,26 +645,23 @@ void setUp()
 	shmid_mem = shmget(4020014, sizeof(memstruct), 0777 | IPC_CREAT);
     	if (shmid_mem == -1) 
 	{
-            perror("Error: shmget");
             exit(0);
         }
     	mem = (struct memory *) shmat(shmid_mem, NULL, 0);
     	if (mem == (struct memory *)(-1) ) 
 	{
-        	perror("Error: shmat");
         	exit(0);
     	}
 
 	 /* setup shared memory segment */
         if ((shmid = shmget(9784, sizeof(sm), IPC_CREAT | 0600)) < 0)
         {
-                perror("Error: shmget");
                 exit(0);
         }
 
 	if ( (messageQ = msgget(4020015, 0777 | IPC_CREAT)) == -1 ) 
 	{
-        	perror("OSS: Error generating message queue");
+        	perror("Error: message queue");
         	exit(0);
     	}	
 	
