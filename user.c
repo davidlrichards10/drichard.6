@@ -25,10 +25,8 @@ sm* ptr;
 sem_t *sem;
 
 int messageQ;
-float weights[32];
 float pageWeight;
 float processWeightBound;
-float methodTwoRequest;
 
 struct message {
     long msgType;
@@ -134,21 +132,24 @@ int main(int argc, char* argv[])
 	{
 		while(1)
 		{
+			/* check if its time for next action and advance clock accordingly */
+                        if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
+                        {
+                                sem_wait(sem);
+                                moveTime.seconds = ptr->time.seconds;
+                                moveTime.nanoseconds = ptr->time.nanoseconds;
+                                sem_post(sem);
+                                incClock(&moveTime, 0, nextMove);
 			/* initialize array where weight is 1/n */
 			float processWeight;
 			int i;
-			for(i = 1; i <= 32; i++)
-			{
-				processWeight = 1 / (float)i;
-				weights[i - 1] = processWeight;
-			}
 			/* add to each index of the array the value in the preceding index */
 			for(i = 0; i < 31; i++)
 			{
-				weights[0] = 1;
-				weights[i + 1] = 1 + weights[i + 1];
+				ptr->resourceStruct.weights[0] = 1;
+				ptr->resourceStruct.weights[i + 1] = 1 + ptr->resourceStruct.weights[i + 1];
 			}
-			processWeightBound = weights[i];
+			processWeightBound = ptr->resourceStruct.weights[i];
 			
 			/* generate a random number from 0 to the last value in the array */
 			int num = (rand() % (int)processWeightBound + 1);
@@ -157,34 +158,24 @@ int main(int argc, char* argv[])
 			/* travel down the array until you find a value greater than that num */ 
 			for(j = 0; j < 32; j++)
 			{
-				if(weights[j] > num)
+				if(ptr->resourceStruct.weights[j] > num)
 				{
-					pageWeight = weights[j];
+					pageWeight = ptr->resourceStruct.weights[j];
 					break;
 				}
 			}
 
 			/* multiply age number by 1024 and add random offset to get the actual memory address */
-			float pageNumber = pageWeight * 1024;
+			float pageNumber = pageWeight * 24;
 			float randomOffset = rand() % 1023;
-			methodTwoRequest = pageNumber + randomOffset;  
-			
-			/* check if its time for next action and advance clock accordingly */
-			if((ptr->time.seconds > moveTime.seconds) || (ptr->time.seconds == moveTime.seconds && ptr->time.nanoseconds >= moveTime.nanoseconds))
-			{
-                                sem_wait(sem);
-                                moveTime.seconds = ptr->time.seconds;
-                                moveTime.nanoseconds = ptr->time.nanoseconds;
-                                sem_post(sem);
-                                incClock(&moveTime, 0, nextMove);
-				
 				/* see if it needs to be a read or write request */
 				if(rand()%100 < 60)
 				{
 					strcpy(msg.mtext,"REQUEST");
 					msg.msgType = 99;
 					msgsnd(messageQ,&msg,sizeof(msg),0);
-					sprintf(msg.mtext,"%i",methodTwoRequest);
+					int methodTwoRequest = pageNumber + randomOffset;
+					sprintf(msg.mtext,"%d",methodTwoRequest);
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 				else
@@ -192,7 +183,8 @@ int main(int argc, char* argv[])
 					strcpy(msg.mtext,"WRITE");
                                         msg.msgType = 99;
                                         msgsnd(messageQ,&msg,sizeof(msg),0);
-					sprintf(msg.mtext,"%i",methodTwoRequest);
+					int methodTwoRequest = pageNumber + randomOffset;
+					sprintf(msg.mtext,"%d",methodTwoRequest);
 					msgsnd(messageQ,&msg,sizeof(msg),0);
 				}
 			}

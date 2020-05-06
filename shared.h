@@ -18,6 +18,7 @@ typedef struct {
 	int memType;
 	int count;
 	int write;
+	float weights[32];
 } resourceInfo;
 
 struct memory {

@@ -147,6 +147,14 @@ int main(int argc, char* argv[])
 	/* set up page numbers */
 	initPages();
 
+	/*initialize array for method 2 */
+	float processWeight;
+        for(i = 1; i <= 32; i++)
+        {
+               	processWeight = 1 / (float)i;
+       		ptr->resourceStruct.weights[i - 1] = processWeight;
+        }
+
 	if(memoryAccess == 0)
 	{
 		printf("Memory access method 0\n");
@@ -265,7 +273,8 @@ int main(int argc, char* argv[])
                                                 {
 							/* get the address message */
 							msgrcv(messageQ,&msg,sizeof(msg),99,0);	
-							int write = atoi(msg.mtext);	
+
+							int write = atoi(msg.mtext);
 							ptr->resourceStruct.count+=1;
 							/* check if the address is available */
 							if(ptr->resourceStruct.memType == 0)
@@ -310,8 +319,8 @@ int main(int argc, char* argv[])
                                                                                 mem->pagetable[pid][(write/1024)/2] = swapframe;
                                                                         }
 
-									fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
-									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",findframe);
+									fprintf(fp,"Clearing frame %d and swapping in P%d\n",swapframe,pid);
+									fprintf(fp,"Dirty bit of frame %d is set, adding time to clock\n",swapframe);
 								}
 								/* place the page in the next open frame */
                 						else 
@@ -382,7 +391,7 @@ int main(int argc, char* argv[])
                                                                                 mem->pagetable[pid][(request/1024)/2] = swapframe;
                                                                         }
 
-                                                                        fprintf(fp,"Clearing frame %d and swapping in P%d page %d\n",findframe,pid,swapframe);
+                                                                        fprintf(fp,"Clearing frame %d and swapping in P%d\n",swapframe,pid);
                                                                 }
 								/* else put the page in the next empty frame */
                                                                 else
